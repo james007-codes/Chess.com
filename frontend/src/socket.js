@@ -21,12 +21,12 @@ const updateBoard = () => {
 };
 
 // --- Role state (optional if you’ll use it later) ---
-let playerRole = null;
+export let playerRole = null;
 let spectatorRole = null;
 
 // Socket listeners
 socket.on("playerRole", (role) => {
-  playerRole = role;
+  playerRole = role === "W" ? "white" : "black";;
   updateBoard();
 });
 
