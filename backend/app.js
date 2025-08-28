@@ -34,22 +34,29 @@ app.get('/chess',(req,res)=>{
 io.on("connection",(uniquesocket)=>{
    
     if(!player.white){
+        console.log("white assigned");
+        
         player.white = uniquesocket.id;
         uniquesocket.emit("playerRole","W");
     }
     else if(!player.black){
+        console.log("black assigned");
+        
         player.white = uniquesocket.id;
         uniquesocket.emit("playerRole","B");
     }
     else{
-        uniquesocket.emit("spectatorRole")
+        console.log("spectatorRole assigned");
+        uniquesocket.emit("spectatorRole","S")
     }
 
     uniquesocket.on("disconnect",()=>{
         if(uniquesocket.id === player.white){
+            console.log("white disconnected");
             delete player.white;
         }
         else if(uniquesocket.id=== player.black){
+             console.log("black disconnected");
             delete player.black;
         }
     })
@@ -57,8 +64,8 @@ io.on("connection",(uniquesocket)=>{
     uniquesocket.on("move",(move)=>{
         try{
 
-            if(chess.turn()==='w' && uniquesocket.id !==player.white) return
-            if(chess.turn()==='b' && uniquesocket.id !==player.black) return
+            if(chess.turn()==='W' && uniquesocket.id !==player.white) return
+            if(chess.turn()==='B' && uniquesocket.id !==player.black) return
          
             const result = chess.move(move);
             if(result){
@@ -66,7 +73,6 @@ io.on("connection",(uniquesocket)=>{
                 io.emit("move",move);
                 io.emit("boardState",chess.fen())
             }else{
-              console.log("Invalid move :",move);
               uniquesocket.emit("Invalid move",move)              
             }
         }catch(err){

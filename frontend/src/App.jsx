@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
-import { chess, getBoard } from "./socket"; 
+import { socket,chess, getBoard, subscribeToBoard } from "./socket";
 
 function App() {
   const [board, setBoard] = useState(getBoard());
   const [draggedFrom, setDraggedFrom] = useState(null);
 
   useEffect(() => {
+    // Subscribe to board updates
+    subscribeToBoard((newBoard) => setBoard(newBoard));
+
+    // Initialize with current board
     setBoard(getBoard());
   }, []);
 
@@ -14,7 +18,6 @@ function App() {
     setBoard(getBoard());
   };
 
-  // Convert row/col → chess algebraic square (a1, e4 etc.)
   const squareName = (row, col) =>
     String.fromCharCode(97 + col) + (8 - row);
 
@@ -27,9 +30,14 @@ function App() {
     if (!draggedFrom) return;
     const to = squareName(row, col);
 
-    const move = chess.move({ from: draggedFrom, to });
+    const move = chess.move({ from: draggedFrom, to, promotion: "q" });
     if (move) {
-      setBoard(getBoard()); 
+      setBoard(getBoard());
+
+      // 🔥 send move to server
+      // so other clients update
+      // (otherwise only local state changes)
+      socket.emit("move", move);
     }
     setDraggedFrom(null);
   };
@@ -46,7 +54,7 @@ function App() {
                 className={`square w-12 h-12 flex items-center justify-center ${
                   isLight ? "bg-slate-400" : "bg-amber-900"
                 }`}
-                onDragOver={(e) => e.preventDefault()} 
+                onDragOver={(e) => e.preventDefault()}
                 onDrop={() => handleDrop(rowIndex, colIndex)}
               >
                 {square ? (
@@ -75,15 +83,14 @@ function App() {
   );
 }
 
-
 function pieceToUnicode(type, color) {
   const map = {
     p: { w: "♙", b: "♟" },
-    r: { w: "♜", b: "♜" },
-    n: { w: "♞", b: "♞" },
-    b: { w: "♝", b: "♝" },
-    q: { w: "♛", b: "♛" },
-    k: { w: "♚", b: "♚" },
+    r: { w: "♖", b: "♜" },
+    n: { w: "♘", b: "♞" },
+    b: { w: "♗", b: "♝" },
+    q: { w: "♕", b: "♛" },
+    k: { w: "♔", b: "♚" },
   };
   return map[type][color];
 }
